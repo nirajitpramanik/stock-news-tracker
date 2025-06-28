@@ -630,7 +630,7 @@ const App = () => {
 
         {/* Feed Status Display */}
         {Object.keys(feedStatus).length > 0 && (
-          <div className="mb-4 p-4 bg-gray-900 border border-gray-700 rounded-lg">
+          <div className="hidden md:block mb-4 p-4 bg-gray-900 border border-gray-700 rounded-lg">
             <h4 className="text-sm font-medium text-gray-300 mb-2">Feed Status:</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
               {Object.entries(feedStatus).map(([source, status]) => (
@@ -650,7 +650,7 @@ const App = () => {
 
         {/* Error Display */}
         {errors.length > 0 && (
-          <div className="mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-lg">
+          <div className="hidden md:block mb-4 p-4 bg-yellow-900 border border-yellow-700 rounded-lg">
             <div className="flex items-center mb-2">
               <AlertTriangle size={16} className="text-yellow-400 mr-2" />
               <span className="text-yellow-400 font-medium">Feed Issues ({errors.length})</span>
