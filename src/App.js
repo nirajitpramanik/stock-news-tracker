@@ -1,5 +1,57 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, X, RefreshCw, Loader, TrendingUp, TrendingDown, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Search, Plus, X, RefreshCw, Loader, TrendingUp, TrendingDown, AlertTriangle, ExternalLink, Download, Wifi, WifiOff } from 'lucide-react';
+
+// Add this custom hook after your imports
+const usePWA = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    // Check if already installed
+    setIsInstalled(window.matchMedia('(display-mode: standalone)').matches);
+
+    // Listen for install prompt
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    // Listen for app installed
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    // Listen for online/offline
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const installApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
+
+  return { deferredPrompt, isInstalled, isOnline, installApp };
+};
 
 // Updated RSS feeds with better working URLs and additional sources
 const RSS_FEEDS = {
@@ -287,8 +339,21 @@ const App = () => {
   const [successCount, setSuccessCount] = useState(0);
   const [feedStatus, setFeedStatus] = useState({});
 
-  // Fetch all RSS feeds
+  // Add PWA hook
+  const { deferredPrompt, isInstalled, isOnline, installApp } = usePWA();
+
+  // Add to existing state
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  // Your existing state variables remain the same...
+
+  // Update the fetchAllFeeds function to handle offline mode
   const fetchAllFeeds = useCallback(async () => {
+    if (!isOnline) {
+      setIsOfflineMode(true);
+      return;
+    }
+
     setIsLoading(true);
     setErrors([]);
     setFeedStatus({});
@@ -378,6 +443,22 @@ const App = () => {
     return () => clearInterval(interval);
   }, [fetchAllFeeds]);
 
+  // Add this to your existing useEffect
+  useEffect(() => {
+    fetchAllFeeds();
+    
+    // Register for background sync
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.sync.register('background-sync-news');
+      });
+    }
+    
+    // Auto-refresh every 15 minutes
+    const interval = setInterval(fetchAllFeeds, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchAllFeeds]);
+
   // Filter functions
   const getFilteredNews = useCallback(() => {
     return news.filter(article => {
@@ -456,6 +537,27 @@ const App = () => {
 
             {/* Controls */}
             <div className="flex items-center space-x-4">
+              {/* Offline/Online indicator */}
+              <div className="flex items-center text-xs text-gray-400">
+                {isOnline ? (
+                  <Wifi size={14} className="mr-1 text-green-400" />
+                ) : (
+                  <WifiOff size={14} className="mr-1 text-red-400" />
+                )}
+                {isOnline ? 'Online' : 'Offline'}
+              </div>
+              
+              {/* Install button */}
+              {deferredPrompt && !isInstalled && (
+                <button
+                  onClick={installApp}
+                  className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-sm"
+                >
+                  <Download size={14} className="mr-1" />
+                  Install App
+                </button>
+              )}
+              
               <div className="text-xs text-gray-400">
                 <div>{successCount}/{Object.keys(RSS_FEEDS).length} sources active</div>
                 {lastUpdate && (
@@ -558,6 +660,17 @@ const App = () => {
                 <div key={index} className="truncate">{error}</div>
               ))}
               {errors.length > 5 && <div>... and {errors.length - 5} more</div>}
+            </div>
+          </div>
+        )}
+
+        {/* Offline Mode Banner */}
+        {isOfflineMode && (
+          <div className="mb-4 p-4 bg-orange-900 border border-orange-700 rounded-lg">
+            <div className="flex items-center">
+              <WifiOff size={16} className="text-orange-400 mr-2" />
+              <span className="text-orange-400 font-medium">Offline Mode</span>
+              <span className="text-orange-200 ml-2">Showing cached news. Connect to internet for updates.</span>
             </div>
           </div>
         )}
