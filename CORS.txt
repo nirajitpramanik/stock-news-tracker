@@ -1,0 +1,24 @@
+{/* Important Notice */}
+<div className="mb-6 p-4 bg-yellow-900/30 border border-yellow-600 rounded-lg">
+    <div className="flex items-start">
+        <AlertTriangle className="text-yellow-400 mr-3 mt-0.5" size={20} />
+        <div>
+        <h3 className="font-semibold text-yellow-200 mb-1">CORS Notice</h3>
+        <p className="text-yellow-100 text-sm">
+            Due to browser security restrictions, some RSS feeds may not load directly. The app attempts to use CORS proxies, 
+            but you may need to enable them first. If feeds fail to load, try visiting{' '}
+            <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" rel="noopener noreferrer" className="underline">
+            this link
+            </a>{' '}
+            to request temporary access.
+        </p>
+        </div>
+    </div>
+</div>
+
+// Alternative: Using RSS2JSON service
+  'economic-times': 'https://api.rss2json.com/v1/api.json?rss_url=https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms',
+  'money-control': 'https://api.rss2json.com/v1/api.json?rss_url=https://www.moneycontrol.com/rss/business.xml',
+  'live-mint': 'https://api.rss2json.com/v1/api.json?rss_url=https://www.livemint.com/rss/markets',
+  'business-standard-a': 'https://api.rss2json.com/v1/api.json?rss_url=https://www.business-standard.com/rss/markets-106.rss',
+  'financial-express-a': 'https://api.rss2json.com/v1/api.json?rss_url=https://www.financialexpress.com/market/rss/'
